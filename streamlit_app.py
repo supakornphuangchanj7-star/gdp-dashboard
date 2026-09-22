@@ -120,8 +120,10 @@ st.line_chart(
 ''
 
 
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
+# Optimize metric lookups by pre-indexing GDP series by Country Code for the start and end years.
+# This avoids doing repeated DataFrame filtering (O(N) scans) inside the render loop for each country.
+first_year_gdp = gdp_df[gdp_df['Year'] == from_year].set_index('Country Code')['GDP']
+last_year_gdp = gdp_df[gdp_df['Year'] == to_year].set_index('Country Code')['GDP']
 
 st.header(f'GDP in {to_year}', divider='gray')
 
@@ -133,8 +135,11 @@ for i, country in enumerate(selected_countries):
     col = cols[i % len(cols)]
 
     with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
+        first_gdp_val = first_year_gdp.get(country)
+        last_gdp_val = last_year_gdp.get(country)
+
+        first_gdp = (first_gdp_val / 1000000000) if first_gdp_val is not None else float('nan')
+        last_gdp = (last_gdp_val / 1000000000) if last_gdp_val is not None else float('nan')
 
         if math.isnan(first_gdp):
             growth = 'n/a'
@@ -145,7 +150,7 @@ for i, country in enumerate(selected_countries):
 
         st.metric(
             label=f'{country} GDP',
-            value=f'{last_gdp:,.0f}B',
+            value=f'{last_gdp:,.0f}B' if not math.isnan(last_gdp) else 'N/A',
             delta=growth,
             delta_color=delta_color
         )
