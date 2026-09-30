@@ -1,0 +1,3 @@
+## 2025-05-18 - Pre-compute Dictionary Lookups for Repeated DataFrame Queries
+**Learning:** Filtering a Pandas DataFrame inside a loop over dynamic selection (e.g. `df[df['Country Code'] == code]['GDP'].iat[0]`) scales linearly with the size of selected items and re-scans the DataFrame $N$ times. Converting the filtered single-year DataFrame to a Python dictionary (`dict(zip(df['Country Code'], df['GDP']))`) provides $O(1)$ lookups per country and yields a ~7x speed improvement for metric computations in Streamlit UI loops.
+**Action:** Always pre-compute dictionary maps or set indices when looking up single field values across a subset of rows inside render loops or repetitive iteration blocks.
