@@ -75,8 +75,8 @@ But it's otherwise a great (and did I mention _free_?) source of data.
 ''
 ''
 
-min_value = gdp_df['Year'].min()
-max_value = gdp_df['Year'].max()
+min_value = int(gdp_df['Year'].min())
+max_value = int(gdp_df['Year'].max())
 
 from_year, to_year = st.slider(
     'Which years are you interested in?',
@@ -119,9 +119,13 @@ st.line_chart(
 ''
 ''
 
+# Performance optimization: Pre-slice filtered_gdp_df for start/end years into O(1) lookups
+# instead of repeatedly performing full-frame searches inside the country loop below.
+first_year_df = filtered_gdp_df[filtered_gdp_df['Year'] == from_year]
+last_year_df = filtered_gdp_df[filtered_gdp_df['Year'] == to_year]
 
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
+first_gdp_dict = dict(zip(first_year_df['Country Code'], first_year_df['GDP']))
+last_gdp_dict = dict(zip(last_year_df['Country Code'], last_year_df['GDP']))
 
 st.header(f'GDP in {to_year}', divider='gray')
 
@@ -133,8 +137,9 @@ for i, country in enumerate(selected_countries):
     col = cols[i % len(cols)]
 
     with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
+        # Fast O(1) hash map lookup replacing repeated DataFrame filtering in the loop
+        first_gdp = first_gdp_dict.get(country, float('nan')) / 1000000000
+        last_gdp = last_gdp_dict.get(country, float('nan')) / 1000000000
 
         if math.isnan(first_gdp):
             growth = 'n/a'
