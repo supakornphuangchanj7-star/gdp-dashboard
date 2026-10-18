@@ -120,8 +120,9 @@ st.line_chart(
 ''
 
 
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
+# Pre-build indexed dictionaries for O(1) GDP lookups per country instead of doing O(N) DataFrame scans inside the render loop on every Streamlit rerun
+first_year_gdp = gdp_df[gdp_df['Year'] == from_year].set_index('Country Code')['GDP'].to_dict()
+last_year_gdp = gdp_df[gdp_df['Year'] == to_year].set_index('Country Code')['GDP'].to_dict()
 
 st.header(f'GDP in {to_year}', divider='gray')
 
@@ -133,8 +134,8 @@ for i, country in enumerate(selected_countries):
     col = cols[i % len(cols)]
 
     with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
+        first_gdp = first_year_gdp.get(country, float('nan')) / 1000000000
+        last_gdp = last_year_gdp.get(country, float('nan')) / 1000000000
 
         if math.isnan(first_gdp):
             growth = 'n/a'
