@@ -120,8 +120,12 @@ st.line_chart(
 ''
 
 
-first_year = gdp_df[gdp_df['Year'] == from_year]
-last_year = gdp_df[gdp_df['Year'] == to_year]
+# Optimize lookup by pre-building dictionary maps for start and end years from filtered_gdp_df.
+# This replaces O(N) DataFrame filtering inside the loop with fast O(1) hash table lookups.
+first_year_df = filtered_gdp_df[filtered_gdp_df['Year'] == from_year]
+last_year_df = filtered_gdp_df[filtered_gdp_df['Year'] == to_year]
+first_year_gdp = dict(zip(first_year_df['Country Code'], first_year_df['GDP']))
+last_year_gdp = dict(zip(last_year_df['Country Code'], last_year_df['GDP']))
 
 st.header(f'GDP in {to_year}', divider='gray')
 
@@ -133,8 +137,8 @@ for i, country in enumerate(selected_countries):
     col = cols[i % len(cols)]
 
     with col:
-        first_gdp = first_year[first_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
-        last_gdp = last_year[last_year['Country Code'] == country]['GDP'].iat[0] / 1000000000
+        first_gdp = first_year_gdp.get(country, math.nan) / 1000000000
+        last_gdp = last_year_gdp.get(country, math.nan) / 1000000000
 
         if math.isnan(first_gdp):
             growth = 'n/a'
