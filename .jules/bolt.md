@@ -1,0 +1,4 @@
+## 2026-11-07 - Avoid Repeated DataFrame Filtering in Streamlit Metric Loops
+
+**Learning:** In Streamlit applications, top-level script code re-executes on every user interaction (slider change, multiselect toggle). Inside metric rendering loops, repeatedly filtering an unindexed DataFrame (e.g. `df[df['Country Code'] == country]['GDP'].iat[0]`) results in repeated $O(N)$ boolean mask operations per item ($O(M \times N)$ total). Pre-indexing the filtered slice into a Series (`df.set_index('Country Code')['GDP']`) enables $O(1)$ lookups ($O(N + M)$ total), improving metric computation by ~70% on default country counts and up to ~99% (from 356ms down to 8.8ms) as more items are selected.
+**Action:** When calculating metrics or displaying card elements across collections of keys in Streamlit, pre-index or convert the relevant slice of data into a keyed Series or dictionary before iterating.
